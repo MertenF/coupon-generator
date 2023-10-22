@@ -1,0 +1,9 @@
+.idea/
+__pycache__/
+.pyc
+.csv
+.pdf
+.png
+
+output/
+img/
