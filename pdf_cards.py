@@ -5,7 +5,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
 from reportlab.lib.enums import TA_JUSTIFY
-from reportlab.platypus import SimpleDocTemplate, BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Image, Table, \
+    TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm, mm
 from reportlab.pdfbase import pdfmetrics
@@ -18,7 +19,10 @@ MARGIN = 0.5*cm
 
 BARCODE_WIDTH = 400
 BARCODE_HEIGHT = 150
-SCALE = 0.2
+SCALE = 0.3
+
+QR_SIZE = 70
+
 styles = getSampleStyleSheet()
 
 pdfmetrics.registerFont(TTFont('Verdana', 'Verdana.ttf'))
@@ -91,14 +95,40 @@ def cards(codes: list[str], discount: int, text: dict):
         info = '<br/>'.join(infolist)
 
         infopara = Paragraph(info, style)
-        img = Image(
+        story.append(infopara)
+
+        order_qr = Image('data/order-qr.png',
+                          width=QR_SIZE,
+                          height=QR_SIZE,
+                          )
+
+        barcode = Image(
             f'img/{code}.png',
             width=BARCODE_WIDTH*SCALE,
             height=BARCODE_HEIGHT*SCALE,
         )
 
-        story.append(infopara)
-        story.append(img)
+        spacing = 50
+        tstyle = TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ])
+        table = Table(
+            data=[
+                [barcode, order_qr],
+            ],
+            colWidths=[BARCODE_WIDTH*SCALE+spacing, QR_SIZE],
+            rowHeights=[40],
+            hAlign='LEFT',
+            vAlign='CENTER',
+            style=tstyle,
+        )
+        story.append(table)
+
+
         #story.append(Spacer(1, 0*mm))
 
     return story

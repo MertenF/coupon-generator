@@ -1,15 +1,15 @@
 import os
+import csv
+from pprint import pprint
 
 import config
-from coupon import CouponGenerator
-import output
 import pdf_cards
 
 
-def print_coupon_info(c_info):
-    print(f"Kortingcodes {c_info['name']}: Prefix={c_info['prefix']} "
-          f"Aantal={c_info['amount']} Korting=€{c_info['discount_eur']} "
-          f"CSV={c_info['csv_file']} "
+def print_coupon_info(c_config, c_billy):
+    print(f"Kortingcodes {c_config['name']}: Created={c_billy[0]['CREATED AT']} "
+          f"Aantal={len(c_billy)} Korting=€{c_billy[0]['TOTAL AMOUNT']} "
+          f"CSV={c_config['billy_codes']} PDF={c_config['pdf_file']}"
           )
 
 
@@ -22,31 +22,26 @@ def delete_files(key):
             pass
 
 
+def read_codes(file: str):
+    with open(file, newline='') as csvfile:
+        return csv.DictReader(csvfile)
+
+
 def main():
-    delete_files('csv_file')
     delete_files('pdf_file')
 
-    generator = CouponGenerator()
-    generator.random_seed(config.random_seed)
-
     for coupon in config.coupons:
-        print_coupon_info(coupon)
-        generator.set_prefix(coupon['prefix'])
+        with open(coupon['billy_codes'], newline='') as coupon_file:
+            vouchers = list(csv.DictReader(coupon_file))
+            pprint(vouchers)
+        print_coupon_info(coupon, vouchers)
 
-        coupon_codes = [generator.generate_coupon() for _ in range(coupon['amount'])]
-
-        output.write_csv(
-            filename=coupon['csv_file'],
-            codes=coupon_codes,
-            mode=coupon['mode'],
-            discount=coupon['discount_eur'],
-            use=coupon['use'],
-        )
+        coupon_codes = [row['CODE'] for row in vouchers]
 
         pdf_cards.create_pdf(
             filename=coupon['pdf_file'],
             codes=coupon_codes,
-            discount=coupon['discount_eur'],
+            discount=vouchers[0]['TOTAL AMOUNT'],
             text=coupon['text']
         )
 
